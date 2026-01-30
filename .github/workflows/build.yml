@@ -1,3 +1,18 @@
+# 1) Sanity-Check: liegen Props + Header wirklich am erwarteten Ort?
+- name: Sanity check (Headers & Props)
+  shell: pwsh
+  run: |
+    Write-Host "PWD: $(Get-Location)"
+    if (Test-Path .\third_party\mapi\include\MAPIUtil.h) { Write-Host "OK: MAPIUtil.h gefunden" } else { Write-Error "FEHLT: third_party\\mapi\\include\\MAPIUtil.h" }
+    if (Test-Path .\Directory.Build.props)           { Write-Host "OK: Directory.Build.props gefunden" } else { Write-Error "FEHLT: Directory.Build.props im Repo-Root" }
+
+# 2) Compiler-Optionen über CL-Umgebungsvariable setzen (erzwingt /I … und /showIncludes)
+- name: Force include path for cl.exe (+ show includes)
+  shell: pwsh
+  run: |
+    $p = (Resolve-Path ".\third_party\mapi\include").Path
+    $env:CL = "/I `"$p`" /showIncludes $env:CL"
+    Write-Host "CL=$env:CL"
 name: build-wdx
 
 on:
