@@ -1,0 +1,6 @@
+[plugininstall]
+description=MSG metadata columns (From, To, Date/Time) for Total Commander
+descriptiondeu=MSG-Metadaten-Spalten (From, To, Datum/Uhrzeit) für Total Commander
+type=wdx
+file=MsgMetaWDX.wdx
+defaultdir=MsgMetaWDX
