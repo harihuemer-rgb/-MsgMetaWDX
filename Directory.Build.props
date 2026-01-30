@@ -1,0 +1,9 @@
+<Project>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+        $(MSBuildThisFileDirectory)third_party\mapi\include;%(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+</Project>
