@@ -1,0 +1,55 @@
+name: build-wdx
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # MSBuild in den PATH legen (offizielle Microsoft-Action)
+      - name: Setup MSBuild (VS2022)
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '17.0'   # Visual Studio 2022 Range
+      # Quelle: GitHub Marketplace/Eigenes Repo der Action
+      # (Die Action findet MSBuild via vswhere und setzt PATH) [1](https://github.com/marketplace/actions/setup-msbuild)[2](https://github.com/microsoft/setup-msbuild?search=1)
+
+      - name: Build (x64 Release)
+        run: msbuild .\vs\MsgMetaWDX.vcxproj /p:Configuration=Release /p:Platform=x64 /nologo /v:m
+
+      - name: Create Auto-Install ZIP
+        shell: pwsh
+        run: |
+          $here   = Resolve-Path .
+          $pkgdir = Join-Path $here 'package'
+          $wdxOut = Join-Path $here 'vs\x64\Release\MsgMetaWDX.wdx'
+          $zip    = 'MsgMetaWDX_v1.0_x64.zip'
+          if (-not (Test-Path $wdxOut)) { throw "Build output not found: $wdxOut" }
+          # ZIP aus dem package-Ordner erstellen (enthält pluginst.inf im Root)
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::CreateFromDirectory($pkgdir, $zip)
+          # Die WDX ins ZIP-Root hinzufügen
+          $fs  = [IO.File]::Open($zip, [IO.FileMode]::Open)
+          $zipArc = New-Object IO.Compression.ZipArchive($fs, [IO.Compression.ZipArchiveMode]::Update)
+          $entry = $zipArc.CreateEntry('MsgMetaWDX.wdx')
+          $es = $entry.Open()
+          [byte[]]$bytes = [IO.File]::ReadAllBytes($wdxOut)
+          $es.Write($bytes,0,$bytes.Length)
+          $es.Close()
+          $zipArc.Dispose()
+          $fs.Close()
+
+      - name: Upload artifact (Auto-Install ZIP)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MsgMetaWDX_v1.0_x64
+          path: MsgMetaWDX_v1.0_x64.zip
+# Upload/Download von Artefakten ist der Standardweg,
+# Dateien eines Runs bereitzustellen. (v4 ist die aktuelle Generation.) [5](https://github.com/actions/upload-artifact)[6](https://docs.github.com/actions/tutorials/store-and-share-data)
